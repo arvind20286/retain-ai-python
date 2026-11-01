@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retain AI - Spaced Repetition Voice Partner</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-2: #1f2937;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --accent: #8b5cf6;
+        --accent-hover: #7c3aed;
+        --accent-2: #22c55e;
+        --danger: #ef4444;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: linear-gradient(135deg, #020817, #111827 50%, #1f2937);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .app {
+        width: min(960px, 92vw);
+        height: min(90vh, 800px);
+        background: rgba(17, 24, 39, 0.95);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        background: rgba(19, 29, 46, 0.85);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 1.25rem;
+        letter-spacing: -0.02em;
+      }
+      .header-tag {
+        background: rgba(139, 92, 246, 0.2);
+        color: #c4b5fd;
+        font-size: 0.75rem;
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(139, 92, 246, 0.4);
+      }
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .status {
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .status.disconnected { background: rgba(148,163,184,0.2); color: var(--muted); }
+      .status.connecting { background: rgba(251,191,36,0.2); color: #fbbf24; }
+      .status.connected { background: rgba(34,197,94,0.2); color: #86efac; }
+      .status.error { background: rgba(239,68,68,0.2); color: #fca5a5; }
+      .main {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+      .review-bar {
+        background: rgba(15, 23, 42, 0.8);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.85rem;
+      }
+      .due-badge {
+        color: #38bdf8;
+        font-weight: 600;
+      }
+      .chat-box {
+        flex: 1;
+        overflow-y: auto;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: rgba(15, 23, 42, 0.6);
+      }
+      .message {
+        max-width: 80%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        line-height: 1.5;
+        word-break: break-word;
+        font-size: 0.95rem;
+      }
+      .message.user {
+        align-self: flex-end;
+        background: rgba(139, 92, 246, 0.25);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        border-bottom-right-radius: 4px;
+      }
+      .message.bot {
+        align-self: flex-start;
+        background: rgba(31, 41, 55, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom-left-radius: 4px;
+      }
+      .message.system {
+        align-self: center;
+        background: rgba(51, 65, 85, 0.4);
+        border: 1px dashed rgba(148, 163, 184, 0.3);
+        color: var(--muted);
+        font-size: 0.82rem;
+        padding: 6px 12px;
+        border-radius: 8px;
+      }
+      .message.grade {
+        align-self: center;
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        color: #6ee7b7;
+        font-size: 0.88rem;
+        padding: 8px 16px;
+        border-radius: 12px;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        padding: 14px 18px;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        background: rgba(15, 23, 42, 0.95);
+        align-items: center;
+      }
+      input {
+        flex: 1;
+        background: var(--panel-2);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        color: var(--text);
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      input:focus {
+        border-color: var(--accent);
+      }
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 11px 18px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      button:hover { transform: translateY(-1px); }
+      button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+      .primary { background: var(--accent); color: white; }
+      .primary:hover { background: var(--accent-hover); }
+      .secondary { background: #334155; color: white; }
+      .secondary:hover { background: #475569; }
+      .danger { background: var(--danger); color: white; }
+      .success { background: var(--accent-2); color: white; }
+      .status-line {
+        font-size: 0.8rem;
+        color: var(--muted);
+        padding: 0 20px 8px;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="header">
+        <div class="header-left">
+          <h1>Retain AI</h1>
+          <span class="header-tag">Gemini Live Voice</span>
+        </div>
+        <div class="header-actions">
+          <button id="syncBtn" class="secondary" title="Sync articles from Notion">Sync Notion</button>
+          <div id="status" class="status disconnected">Disconnected</div>
+        </div>
+      </div>
+
+      <div class="review-bar">
+        <span id="dueSummary" class="due-badge">Checking due cards...</span>
+        <button id="refreshDueBtn" class="secondary" style="padding: 4px 10px; font-size: 0.75rem;">Refresh Queue</button>
+      </div>
+
+      <div class="main">
+        <div id="chatBox" class="chat-box"></div>
+        <div class="status-line">
+          <span id="statusLine">Mic off • Chat ready</span>
+          <span id="audioIndicator" style="opacity: 0;">🔊 Speaking...</span>
+        </div>
+        <div class="controls">
+          <button id="connectBtn" class="primary">Connect Live</button>
+          <button id="micBtn" class="secondary">Start Mic</button>
+          <input id="textInput" type="text" placeholder="Type answer or question..." />
+          <button id="sendBtn" class="secondary">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
+
